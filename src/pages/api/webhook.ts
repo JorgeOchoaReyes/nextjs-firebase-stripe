@@ -2,9 +2,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { buffer } from "micro";
 import Stripe from "stripe";
 import { db } from "~/server/api/firebase-admin";
-import { s } from "node_modules/framer-motion/dist/types.d-DDSxwf0n";
 
-const stripe = new Stripe(process.env.STRIPE_DEV_SECRET_KEY!, {
+const stripeEnv = process.env.NODE_ENV === "production" ? process.env.STRIPE_PROD_SECRET_KEY : process.env.STRIPE_DEV_SECRET_KEY;
+const webhookSecret = process.env.NODE_ENV === "production" ? process.env.STRIPE_PROD_WEBHOOK_SECRET : process.env.STRIPE_DEV_WEBHOOK_SECRET;
+
+const stripe = new Stripe(stripeEnv!, {
   apiVersion: "2025-03-31.basil",
 });
 
@@ -26,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(buf.toString(), sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe.webhooks.constructEvent(buf.toString(), sig, webhookSecret!);
   } catch (err) {
     console.log(`Webhook Error: ${(err as {message: string})?.message}`);
     return res.status(400).send("Webhook Error");
