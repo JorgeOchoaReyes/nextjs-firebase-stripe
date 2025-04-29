@@ -27,6 +27,10 @@ const MyApp: AppType = ({ Component, pageProps }) => {
         const token = await user?.getIdToken();
         if (!token) {
           console.error("No token found");
+          nookies.destroy(null, "firebase-token", { path: "/" });
+          router.push("/login").then().catch((error) => {
+            console.error("Error redirecting to login:", error);
+          });
           return;
         }
         nookies.set(null, "firebase-token", token, { path: "/" });
