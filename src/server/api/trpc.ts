@@ -8,7 +8,9 @@ import type { UserRecord } from "firebase-admin/auth";
 type CreateContextOptions = {
   session: {
     user: UserRecord | null;
-  };
+  }; 
+  req: CreateNextContextOptions["req"];
+  res: CreateNextContextOptions["res"];
 };
  
 const createInnerTRPCContext = (_opts: CreateContextOptions) => {
@@ -17,28 +19,36 @@ const createInnerTRPCContext = (_opts: CreateContextOptions) => {
     auth: auth,
     session: {
       user: _opts.session.user,
-    }
+    },
+    req: _opts.req,
+    res: _opts.res,
   };
 };
  
 export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
   const { req, res } = _opts;
-  const firebasetokenCookie = req.cookies["firebase-token"];
-  if (!firebasetokenCookie) {
+  const firebasetoken = req.headers.authorization?.split(" ")[1];
+  
+  if (!firebasetoken) {
     return createInnerTRPCContext({
       session: {
         user: null,
-      }
+      },
+      req,
+      res,
     });
   } 
-  const decodedToken = await app.auth().verifyIdToken(firebasetokenCookie);
+
+  const decodedToken = await app.auth().verifyIdToken(firebasetoken);
   const uid = decodedToken.uid;
   const user = await app.auth().getUser(uid);
 
   return createInnerTRPCContext({
     session: {
       user: user,
-    }
+    },
+    req,
+    res,
   });
 };
  
